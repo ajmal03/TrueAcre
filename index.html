@@ -212,21 +212,22 @@
                     <h4 class="fw-bold mb-1">Join the founding waitlist</h4>
                     <p class="text-muted small mb-4">Early access. Launch updates. No spam.</p>
                     
-                    <form id="waitlistForm">
+                    <form id="waitlistForm" onsubmit="handleWaitlistSubmit(event)">
                         <div class="mb-3">
-                            <input type="text" class="form-control" placeholder="Name" required>
+                            <input id="wa_name" name="name" type="text" class="form-control" placeholder="Name" required>
                         </div>
                         <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Email" required>
+                            <input id="wa_email" name="email" type="email" class="form-control" placeholder="Email" required>
                         </div>
 
                         <div class="d-flex align-items-center mb-3">
                             <span class="me-2 fw-bold small">I am a:</span>
                             <div class="role-selector" id="roleContainer">
-                                <span class="role-pill active" onclick="selectRole(this)">Buyer</span>
-                                <span class="role-pill" onclick="selectRole(this)">Renter</span>
-                                <span class="role-pill" onclick="selectRole(this)">Seller</span>
-                                <span class="role-pill" onclick="selectRole(this)">Builder</span>
+                                <input type="hidden" id="selectedRole" name="role" value="Buyer">
+                                <span class="role-pill active" onclick="chooseRole(this)">Buyer</span>
+                                <span class="role-pill" onclick="chooseRole(this)">Renter</span>
+                                <span class="role-pill" onclick="chooseRole(this)">Seller</span>
+                                <span class="role-pill" onclick="chooseRole(this)">Builder</span>
                             </div>
                         </div>
 
@@ -240,6 +241,71 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Success overlay (hidden by default) -->
+            <div id="successOverlay" style="display:none; position:fixed; inset:0; z-index:1050; align-items:center; justify-content:center;">
+                <div style="background:rgba(0,0,0,0.45); position:absolute; inset:0;"></div>
+                <div style="position:relative; background:#fff; padding:24px 28px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.25); max-width:420px; width:90%; text-align:center; z-index:1060;">
+                    <h5 style="margin:0 0 8px; color:#2c3e50;">Thanks for joining the waitlist!</h5>
+                    <p style="margin:0 0 16px; color:#555; font-size:0.95rem;">We'll be in touch soon. Check your email for updates.</p>
+                    <button id="overlayCloseBtn" style="background:var(--primary-blue); color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;">Close</button>
+                </div>
+            </div>
+
+            <script>
+                // Role selection helper used by pills
+                function chooseRole(el) {
+                    var container = document.getElementById('roleContainer');
+                    var pills = container.getElementsByClassName('role-pill');
+                    for (var i = 0; i < pills.length; i++) pills[i].classList.remove('active');
+                    el.classList.add('active');
+                    document.getElementById('selectedRole').value = el.textContent.trim();
+                }
+
+                // Handle form submit: open user's mail client with prefilled message and show centered success overlay
+                function handleWaitlistSubmit(e) {
+                    // prevent other handlers (there is an existing demo handler in the page)
+                    e.preventDefault();
+                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+                    var name = document.getElementById('wa_name').value.trim();
+                    var email = document.getElementById('wa_email').value.trim();
+                    var role = document.getElementById('selectedRole').value || 'Buyer';
+
+                    // Build mailto link to info@trueacre.com.au with subject and body
+                    var subject = encodeURIComponent('TrueAcre Waitlist Signup');
+                    var bodyLines = [
+                        'Name: ' + name,
+                        'Email: ' + email,
+                        'Role: ' + role,
+                        '',
+                        'Source: TrueAcre website waitlist'
+                    ];
+                    var body = encodeURIComponent(bodyLines.join('\n'));
+                    var mailto = 'mailto:info@trueacre.com.au?subject=' + subject + '&body=' + body;
+
+                    // Open mail client (user will still need to send the email)
+                    window.location.href = mailto;
+
+                    // Show success overlay centered on screen
+                    var overlay = document.getElementById('successOverlay');
+                    overlay.style.display = 'flex';
+                    // Reset form after short delay
+                    setTimeout(function() {
+                        try { document.getElementById('waitlistForm').reset(); } catch (err) {}
+                        // reset role pill to default 'Buyer'
+                        var pills = document.querySelectorAll('#roleContainer .role-pill');
+                        pills.forEach(function(p){ p.classList.remove('active'); });
+                        if (pills[0]) { pills[0].classList.add('active'); document.getElementById('selectedRole').value = 'Buyer'; }
+                    }, 300);
+
+                    // Close button and auto-dismiss
+                    document.getElementById('overlayCloseBtn').onclick = function() {
+                        overlay.style.display = 'none';
+                    };
+                    setTimeout(function(){ overlay.style.display = 'none'; }, 5000);
+                }
+            </script>
         </div>
 
         <div class="footer-text">
